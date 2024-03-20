@@ -1,6 +1,13 @@
 package net.ideahut.springboot.template.config;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
@@ -24,6 +31,7 @@ import net.ideahut.springboot.crud.CrudRequest;
 import net.ideahut.springboot.crud.CrudResource;
 import net.ideahut.springboot.entity.EntityInfo;
 import net.ideahut.springboot.entity.EntityTrxManager;
+import net.ideahut.springboot.entity.SessionCallable;
 import net.ideahut.springboot.entity.TrxManagerInfo;
 import net.ideahut.springboot.grid.GridHandler;
 import net.ideahut.springboot.grid.GridHandlerImpl;
@@ -34,13 +42,18 @@ import net.ideahut.springboot.mail.MailHandlerImpl;
 import net.ideahut.springboot.mapper.DataMapper;
 import net.ideahut.springboot.report.ReportHandler;
 import net.ideahut.springboot.report.ReportHandlerImpl;
+import net.ideahut.springboot.sysparam.SysParamDto;
+import net.ideahut.springboot.sysparam.SysParamHandler;
+import net.ideahut.springboot.sysparam.SysParamHandlerImpl;
+import net.ideahut.springboot.sysparam.SysParamReloader;
 import net.ideahut.springboot.task.TaskHandler;
 import net.ideahut.springboot.template.AppConstants;
 import net.ideahut.springboot.template.AppProperties;
 import net.ideahut.springboot.template.AppProperties.Audit;
 import net.ideahut.springboot.template.entity.EntityFill;
+import net.ideahut.springboot.template.entity.SysParam;
 import net.ideahut.springboot.template.support.GridSupport;
-import net.ideahut.springboot.util.BeanUtil;
+import net.ideahut.springboot.util.FrameworkUtil;
 
 /*
  * Konfigurasi handler
@@ -146,6 +159,45 @@ class HandlerConfig {
 	}
 	
 	@Bean
+	protected SysParamHandler sysParamHandler(
+		DataMapper dataMapper,
+		RedisTemplate<String, byte[]> redisTemplate,
+		EntityTrxManager entityTrxManager
+	) {
+		return new SysParamHandlerImpl()
+		.setDataMapper(dataMapper)
+		.setRedisTemplate(redisTemplate)
+		.setReloader(new SysParamReloader() {
+			@Override
+			public List<SysParamDto> reload(Collection<String> sysCodes) {
+				TrxManagerInfo trxManagerInfo = entityTrxManager.getDefaultTrxManagerInfo();
+				return trxManagerInfo.transaction(new SessionCallable<List<SysParamDto>>() {
+					@Override
+					public List<SysParamDto> call(Session session) throws Exception {
+						boolean notEmpty = sysCodes != null && !sysCodes.isEmpty();
+						Query<SysParam> query = session.createQuery(
+							"from SysParam " + (notEmpty ? "where id.sysCode in (?1)": ""), 
+							SysParam.class
+						);
+						if (notEmpty) {
+							query.setParameter(1, sysCodes);
+						}
+						List<SysParamDto> dtos = new ArrayList<SysParamDto>();
+						List<SysParam> entities = query.getResultList();
+						while (!entities.isEmpty()) {
+							SysParam entity = entities.remove(0);
+							SysParamDto dto = new SysParamDto(entity.getId().getSysCode(), entity.getId().getParamCode());
+							BeanUtils.copyProperties(entity, dto, "id");
+							dtos.add(dto);
+						}
+						return dtos;
+					}
+				});
+			}
+		});
+	}
+	
+	@Bean
 	protected CrudHandler crudHandler(
 		@Qualifier(AppConstants.Bean.ENTITY_TRX_MANAGER) EntityTrxManager entityTrxManager,
 		@Qualifier(AppConstants.Bean.DATA_MAPPER) DataMapper dataMapper,
@@ -169,7 +221,7 @@ class HandlerConfig {
 			@Override
 			public CrudProps getCrudProps(String manager, String name) {
 				try {
-					Class<?> clazz = BeanUtil.classOf(EntityFill.class.getPackageName() + "." + name);
+					Class<?> clazz = FrameworkUtil.classOf(EntityFill.class.getPackageName() + "." + name);
 					TrxManagerInfo trxManagerInfo = entityTrxManager.getDefaultTrxManagerInfo();
 					if (manager != null && !manager.isEmpty()) {
 						trxManagerInfo = entityTrxManager.getTrxManagerInfo(manager);
@@ -181,7 +233,7 @@ class HandlerConfig {
 					resource.setUseNative(false);
 					return resource;
 				} catch (Exception e) {
-					throw BeanUtil.exception(e);
+					throw FrameworkUtil.exception(e);
 				}
 			}
 		};

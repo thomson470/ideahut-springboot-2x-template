@@ -2,7 +2,9 @@ package net.ideahut.springboot.template.controller;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,10 +46,15 @@ import net.ideahut.springboot.entity.EntityReplica;
 import net.ideahut.springboot.entity.EntityTrxManager;
 import net.ideahut.springboot.entity.SessionCallable;
 import net.ideahut.springboot.entity.TrxManagerInfo;
+import net.ideahut.springboot.job.JobGroupDto;
+import net.ideahut.springboot.job.JobService;
 import net.ideahut.springboot.mapper.DataMapper;
 import net.ideahut.springboot.object.MapStringObject;
 import net.ideahut.springboot.object.Page;
 import net.ideahut.springboot.object.Result;
+import net.ideahut.springboot.security.RedisMemoryCredential;
+import net.ideahut.springboot.sysparam.SysParamDto;
+import net.ideahut.springboot.sysparam.SysParamHandler;
 import net.ideahut.springboot.task.TaskHandler;
 import net.ideahut.springboot.template.AppConstants;
 import net.ideahut.springboot.template.entity.AutoGenStrIdHardDel;
@@ -188,7 +195,7 @@ class TestController {
 		)
 		.addValue(value)
 		.addValue(mso)
-		.addFilter(Filter.and("createdOn", Condition.NOT_NULL, null))
+		.addFilter(Filter.and("createdOn", Condition.NOT_NULL))
 		.addOrder("-createdOn");
 		//CrudRequest request = rest.getRequest();
 		System.out.println(rest.toJsonString());
@@ -274,7 +281,36 @@ class TestController {
 	
 	
 	
+	@Autowired
+	private JobService jobService;
 	
+	@Public
+	@GetMapping("/job/groups")
+	protected List<JobGroupDto> jobGroups() {
+		return jobService.getGroups(null, null);
+	}
+	
+	
+	@Autowired
+	private RedisMemoryCredential adminCredential;
+	@Public
+	@GetMapping("/admin/reload")
+	protected void adminReload() throws Exception {
+		adminCredential.reloadBean();
+	}
+	
+	@Autowired
+	private SysParamHandler sysParamHandler;
+	@Public
+	@GetMapping("/sysparam/maps")
+	protected Map<String, Map<String, SysParamDto>> sysParamMaps() throws Exception {
+		return sysParamHandler.getSysParamMaps(Arrays.asList("ARTICLE", "MULTIMEDIA"));
+	}
+	@Public
+	@GetMapping("/sysparam/value")
+	protected SysParamDto sysParamValue() {
+		return sysParamHandler.getSysParam("SENTIMENT", "DEFAULT_ANALYZER_ID");
+	}
 	
 	
 	

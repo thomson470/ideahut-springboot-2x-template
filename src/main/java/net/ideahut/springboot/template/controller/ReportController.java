@@ -19,7 +19,7 @@ import net.ideahut.springboot.report.ReportHandler;
 import net.ideahut.springboot.report.ReportInput;
 import net.ideahut.springboot.report.ReportType;
 import net.ideahut.springboot.template.object.ReportData;
-import net.ideahut.springboot.util.BeanUtil;
+import net.ideahut.springboot.util.FrameworkUtil;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.util.JRLoader;
 
@@ -67,7 +67,7 @@ class ReportController {
 				
 				reportHandler.exportReport(input, response);
 			} catch (Exception e) {
-				throw BeanUtil.exception(e);
+				throw FrameworkUtil.exception(e);
 			}
 		};
 		return ResponseEntity.ok().contentType(MediaType.valueOf(type.getContentType())).body(body);

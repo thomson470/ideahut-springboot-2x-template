@@ -1,0 +1,1 @@
+"use strict";(globalThis["webpackChunkideahut_quasar_template"]=globalThis["webpackChunkideahut_quasar_template"]||[]).push([[183],{183:(a,e,t)=>{t.r(e),t.d(e,{default:()=>l});var u=t(1758);function r(a,e){return(0,u.uX)(),(0,u.CE)("div")}var s=t(2807);const h={},i=(0,s.A)(h,[["render",r]]),l=i}}]);

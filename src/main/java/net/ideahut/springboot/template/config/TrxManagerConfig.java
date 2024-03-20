@@ -33,7 +33,7 @@ import net.ideahut.springboot.template.AppConstants;
 import net.ideahut.springboot.template.AppProperties;
 import net.ideahut.springboot.template.AppProperties.Audit;
 import net.ideahut.springboot.template.entity.EntityFill;
-import net.ideahut.springboot.util.BeanUtil;
+import net.ideahut.springboot.util.FrameworkUtil;
 
 @Configuration
 @EnableTransactionManagement
@@ -56,7 +56,7 @@ class TrxManagerConfig {
 	@Primary
 	@Bean(name = AppConstants.Bean.DATA_SOURCE)
 	@ConfigurationProperties(prefix = "spring.datasource")
-	public DataSource dataSource() {
+	protected DataSource dataSource() {
 		String jndi = environment.getProperty("spring.datasource.jndi-name", "").trim();
 		if (!jndi.isEmpty()) {
 			JndiDataSourceLookup lookup = new JndiDataSourceLookup();
@@ -73,7 +73,7 @@ class TrxManagerConfig {
 		@Qualifier(AppConstants.Bean.DATA_SOURCE) DataSource dataSource,
 		@Qualifier(AppConstants.Bean.Audit.SESSION_FACTORY) SessionFactory auditSessionFactory
 	) {
-		Map<String, Object> properties = BeanUtil.getHibernateProperties(environment, "spring.jpa.properties");
+		Map<String, Object> properties = FrameworkUtil.getHibernateProperties(environment, "spring.jpa.properties");
 		/*
 		 * Session Factory audit dapat di-set disini
 		 * atau bisa juga di application.properties / application.yml di property:

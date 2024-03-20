@@ -13,7 +13,7 @@ import net.ideahut.springboot.filter.SecurityAuthorizationFilter;
 import net.ideahut.springboot.security.SecurityAuthorization;
 import net.ideahut.springboot.template.AppConstants;
 import net.ideahut.springboot.template.AppProperties;
-import net.ideahut.springboot.util.BeanUtil;
+import net.ideahut.springboot.util.FrameworkUtil;
 
 /*
  * Konfigurasi Filter
@@ -28,7 +28,7 @@ class FilterConfig {
 	
 	@Bean
 	protected FilterRegistrationBean<DefaultRequestFilter> defaultRequestFilter() {		
-		return BeanUtil.createFilterBean(
+		return FrameworkUtil.createFilterBean(
 			environment,
 			new DefaultRequestFilter()
 				.setCORSHeaders(appProperties.getCors())
@@ -45,7 +45,7 @@ class FilterConfig {
 		@Qualifier(AppConstants.Bean.Admin.HANDLER) AdminHandler adminHandler,
 		@Qualifier(AppConstants.Bean.Admin.SECURITY) SecurityAuthorization adminSecurity
 	) {
-		return BeanUtil.createFilterBean(
+		return FrameworkUtil.createFilterBean(
 			environment,
 			new SecurityAuthorizationFilter()
 				.setSecurityAuthorization(adminSecurity),

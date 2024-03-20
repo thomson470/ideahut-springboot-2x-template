@@ -11,6 +11,7 @@ import net.ideahut.springboot.admin.AdminHandler;
 import net.ideahut.springboot.admin.AdminHandlerImpl;
 import net.ideahut.springboot.admin.AdminSecurity;
 import net.ideahut.springboot.mapper.DataMapper;
+import net.ideahut.springboot.security.RedisMemoryCredential;
 import net.ideahut.springboot.template.AppConstants;
 import net.ideahut.springboot.template.AppProperties;
 import net.ideahut.springboot.template.support.GridSupport;
@@ -40,42 +41,40 @@ class AdminConfig {
 		.setRedisTemplate(redisTemplate);
 	}
 	
-	@Bean(name = AppConstants.Bean.Admin.SECURITY)
-	protected AdminSecurity adminSecurity(
-		DataMapper dataMapper,
-		RedisTemplate<String, byte[]> redisTemplate,
-		@Qualifier(AppConstants.Bean.Admin.HANDLER) AdminHandler adminHandler
-	) {
-		AppProperties.Admin admin = appProperties.getAdmin();
-		return new AdminSecurity()
-		.setDataMapper(dataMapper)
-		.setRedisTemplate(redisTemplate)
-		.setExpiryInMinutes(admin.getExpiryInMinutes())
-		.setPasswordType(admin.getPasswordType())
-		.setUsers(admin.getUsers())
-		.setProperties(adminHandler.getProperties());
-	}
-	
-	/*
 	@Bean(name = AppConstants.Bean.Admin.CREDENTIAL)
-	protected BasicAuthInMemoryCredential adminCredential(
+	protected RedisMemoryCredential adminCredential(
+		DataMapper dataMapper,
 		RedisTemplate<String, byte[]> redisTemplate
 	) {
 		AppProperties.Admin admin = appProperties.getAdmin();
-		List<SecurityUser> users = admin.getUsers();
-		return new BasicAuthInMemoryCredential()
-		.setPasswordType(admin.getPasswordType())
-		.setRedisExpiry(admin.getExpiryInMinutes())
-		.setRedisPrefix("ADMIN")
-		.setRedisTemplate(redisTemplate)
-		.setUsers(users);
+		return new RedisMemoryCredential()
+		.setConfigFile(admin.getCredentialFile())
+		.setDataMapper(dataMapper)
+		.setRedisPrefix("ADMIN-CREDENTIAL")
+		.setRedisTemplate(redisTemplate);
 	}
 	
+	
 	@Bean(name = AppConstants.Bean.Admin.SECURITY)
-	protected BasicAuthSecurityAuthorization adminSecurity(
-		@Qualifier(AppConstants.Bean.Admin.CREDENTIAL) BasicAuthInMemoryCredential adminCredential
+	protected AdminSecurity adminSecurity(
+		DataMapper dataMapper,
+		@Qualifier(AppConstants.Bean.Admin.CREDENTIAL) RedisMemoryCredential adminCredential,
+		@Qualifier(AppConstants.Bean.Admin.HANDLER) AdminHandler adminHandler
 	) {
-		return new BasicAuthSecurityAuthorization()
+		return new AdminSecurity()
+		.setCredential(adminCredential)
+		.setDataMapper(dataMapper)
+		.setProperties(adminHandler.getProperties());
+		
+	}
+	
+	
+	/*
+	@Bean(name = AppConstants.Bean.Admin.SECURITY)
+	protected BasicAuthSecurity adminSecurity(
+		@Qualifier(AppConstants.Bean.Admin.CREDENTIAL) RedisMemoryCredential adminCredential
+	) {
+		return new BasicAuthSecurity()
 		.setCredential(adminCredential)
 		.setRealm("Admin");
 	}

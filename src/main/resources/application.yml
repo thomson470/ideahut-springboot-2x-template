@@ -1,7 +1,5 @@
 server:
    port: 5401
-   #servlet:
-      #context-path: /api
       
 debug: false
 
@@ -30,8 +28,8 @@ spring:
    profiles:
       #active: "db2"
       #active: "h2"
-      active: "mariadb"
-      #active: "mysql"
+      #active: "mariadb"
+      active: "mysql"
       #active: "oracle"
       #active: "postgresql"
       #active: "sqlserver"
@@ -60,9 +58,9 @@ spring:
             audit_bean_name: auditSessionFactory
 
 app:
-   instanceId: ideahut-springboot-3x-template
+   instanceId: ideahut-springboot-2x-template
    loggingError: true
-   gridLocation: "classpath:/grid/**/*.json"
+   gridLocation: "file:{user.dir}/external/grid/**/*.json"
    
    cors:
       "Access-Control-Allow-Credentials": "true"
@@ -99,7 +97,6 @@ app:
          
    audit:
       jpa:
-         open-in-view: false
          properties:
             hibernate:
                hbm2ddl:
@@ -165,34 +162,10 @@ app:
          "mail.smtp.ssl.protocols": "TLSv1.2"
 
    admin:
-      api:
-         requestPath: "/admin"
-      resource:
-         requestPath: "/_"
-         locations: "file:/opt/macdev/project/thomson470/github/ideahut-springboot-admin/dist/spa/"
-         indexFile: "index.html"
-         alwaysToIndex: true 
-         allowedPaths:
-            - "css"
-            - "fonts"
-            - "icons"
-            - "js"
-      grid:
-         location: "file:/opt/macdev/project/thomson470/github/ideahut-springboot-3x-template/grid-admin/**/*.json"
-      crud:
-         maxLimit: 200
-         useNative: false
-      expiryInMinutes: 15
-      passwordType: "bcrypt"
-      #passwordType: "sha256"
-      users:
-         - username: "admin"
-           password: "$2a$10$NL8fAwz/UG6FCk6sEo10Ueuihe.oiX4DQHN4OWqXmDUM9.4Hnu8EC"
-           #password: "b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326af5a2ea6d103fd07c95385ffab0cacbc86"
-         - username: "mimin"
-           password: "$2a$10$uIAtTYQcSsXOR7xABu/gwOLqf3mOde7z2vZVqug3OjItsdKrmuc5m"
-           #password: "009803888b792274f6f63bbc5c029afaa5b9ff36e9155e6eb41185a5232f0e488dfde18573f25f26e56fa839a8cbb15dd7ace02456aed129b568f1616d6f118f"
-  
+      configFile: "file:{user.dir}/external/admin/config.json"
+      credentialFile: "file:{user.dir}/external/admin/credential-bcrypt.json"
+      #credentialFile: "file:{user.dir}/external/admin/credential-sha256.json"
+             
 logging:
    file: logs/ideahut-springboot-3x-template.log
    pattern:
@@ -206,5 +179,8 @@ logging:
          clients:
             jedis:
                JedisFactory: OFF
-            
-
+      com:
+         fasterxml:
+            jackson:
+               dataformat:
+                  xml: OFF

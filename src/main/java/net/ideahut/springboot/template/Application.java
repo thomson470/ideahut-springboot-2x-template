@@ -15,15 +15,12 @@ import org.springframework.core.SpringVersion;
 
 import lombok.extern.slf4j.Slf4j;
 import net.ideahut.springboot.IdeahutVersion;
-import net.ideahut.springboot.admin.AdminHandler;
 import net.ideahut.springboot.audit.AuditHandler;
 import net.ideahut.springboot.bean.BeanConfigure;
 import net.ideahut.springboot.entity.EntityTrxManager;
-import net.ideahut.springboot.grid.GridHandler;
 import net.ideahut.springboot.init.InitHandler;
 import net.ideahut.springboot.task.TaskHandler;
-import net.ideahut.springboot.template.service.MessageService;
-import net.ideahut.springboot.util.BeanUtil;
+import net.ideahut.springboot.util.FrameworkUtil;
 
 @Slf4j
 @SpringBootApplication
@@ -59,7 +56,16 @@ public class Application extends SpringBootServletInitializer implements Applica
 		log.info("**** Initializing application '" + appProperties.getInstanceId() + "'");
 		TaskHandler commonAsync = applicationContext.getBean(AppConstants.Bean.Async.COMMON, TaskHandler.class);
 		commonAsync.execute(() -> {
-			BeanConfigure.runBeanConfigure(applicationContext, EntityTrxManager.class, null);
+			try {
+				BeanConfigure.runBeanConfigure(
+					commonAsync, 
+					applicationContext, 
+					EntityTrxManager.class, 
+					AuditHandler.class
+				);
+			} catch (Exception e) {
+				throw FrameworkUtil.exception(e);
+			}
 			InitHandler initHandler = applicationContext.getBean(InitHandler.class);
 			commonAsync.execute(new Runnable() {
 				@Override
@@ -69,14 +75,10 @@ public class Application extends SpringBootServletInitializer implements Applica
 						initHandler.initMapper(applicationContext);
 						initHandler.initValidation();
 					} catch (Exception e) {
-						throw BeanUtil.exception(e);
+						throw FrameworkUtil.exception(e);
 					}
 				}
 			});
-			BeanConfigure.runBeanConfigure(applicationContext, AuditHandler.class, commonAsync);
-			BeanConfigure.runBeanConfigure(applicationContext, GridHandler.class, commonAsync);
-			BeanConfigure.runBeanConfigure(applicationContext, AdminHandler.class, commonAsync);
-			BeanConfigure.runBeanConfigure(applicationContext, MessageService.class, commonAsync);
 			ready = true;
 			
 			// Inisialisasi Servlet dengan mengirim request ke endpoint /warmup (Lihat WarmUpController)

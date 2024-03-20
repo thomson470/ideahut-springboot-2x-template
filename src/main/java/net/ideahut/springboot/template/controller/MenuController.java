@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import net.ideahut.springboot.grid.GridHandler;
+import net.ideahut.springboot.grid.GridSource;
 import net.ideahut.springboot.mapper.DataMapper;
 import net.ideahut.springboot.object.Result;
 import net.ideahut.springboot.template.entity.Menu;
@@ -30,9 +31,10 @@ class MenuController {
 	protected Result list() {
 		List<Menu> menus = new ArrayList<Menu>();
 		menus.add(cache());
-		Map<String, List<String>> grids = gridHandler.getNames();
-		for (Map.Entry<String, List<String>> entry : grids.entrySet()) {
-			Menu menu = grid(entry);
+		Map<String, List<GridSource>> grids = gridHandler.getSources();
+		for (Map.Entry<String, List<GridSource>> entry : grids.entrySet()) {
+			Menu menu = new Menu();
+			//menus
 			menus.add(menu);
 		}
 		return Result.success(menus);

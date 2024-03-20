@@ -15,7 +15,6 @@ import net.ideahut.springboot.audit.DatabaseAuditProperties;
 import net.ideahut.springboot.cache.CacheGroupProperties;
 import net.ideahut.springboot.mail.MailProperties;
 import net.ideahut.springboot.redis.RedisProperties;
-import net.ideahut.springboot.security.SecurityUser;
 import net.ideahut.springboot.task.TaskProperties;
 
 @Configuration
@@ -86,9 +85,7 @@ public class AppProperties {
 	@Getter
 	public static class Admin extends AdminProperties {
 		private String configFile;
-		private String passwordType;
-		private Integer expiryInMinutes;
-		private List<SecurityUser> users = new ArrayList<>();
+		private String credentialFile;
 	}
 	
 }

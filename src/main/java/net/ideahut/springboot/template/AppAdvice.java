@@ -60,11 +60,19 @@ public class AppAdvice implements ResponseBodyAdvice<Object> {
 		ServerHttpRequest request,
 		ServerHttpResponse response
 	) {
-		RequestContext.destroy();
-		if (!(body instanceof Result)) {
-			return Result.success(body);
+		if (body instanceof byte[]) {
+			RequestContext.destroy();
+			return body;
 		}
-		return body;
+		Result result = null;
+		if (!(body instanceof Result)) {
+			result = Result.success(body);
+		} else {
+			result = (Result) body;
+			result.updateTime();
+		}
+		RequestContext.destroy();
+		return result;
 	}
     
 }
