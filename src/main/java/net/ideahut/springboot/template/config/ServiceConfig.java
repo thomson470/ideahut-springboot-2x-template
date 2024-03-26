@@ -4,9 +4,10 @@ import org.springframework.context.annotation.Configuration;
 
 /*
  * Konfigurasi Service
- * Khususnya yang tidak @Autowired
+ * Khususnya yang tidak punya @Service
  */
 @Configuration
 class ServiceConfig {
+	
 	
 }

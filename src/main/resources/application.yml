@@ -55,12 +55,14 @@ spring:
             show_sql: true
             #generate_statistics: true
             audit_identifier: spring_sample
-            audit_bean_name: auditSessionFactory
+            audit_bean_name: auditSessionFactory_1
 
 app:
    instanceId: ideahut-springboot-2x-template
    loggingError: true
-   gridLocation: "file:{user.dir}/external/grid/**/*.json"
+   gridLocation: "file:{user.dir}/extras/grid/**/*.json"
+   messagePath: "file:{user.dir}/extras/message/"
+   reportPath: "file:{user.dir}/extras/report/"
    
    cors:
       "Access-Control-Allow-Credentials": "true"
@@ -73,28 +75,6 @@ app:
    ignored-handler-classes:
       - org.springframework.boot.autoconfigure.web.servlet.error.BasicErrorController
       
-   #other-db:
-   #   datasource:
-   #      driver-class-name: com.mysql.cj.jdbc.Driver
-   #      jdbc-url: jdbc:mysql://localhost:3306/springboot_sample2_?createDatabaseIfNotExist=true&autoReconnect=true
-   #      username: root
-   #      password: a3213c419771fbd1a05cdde7127e6393ef852db97328b21a45de700e9bbe85db      
-   #   jpa:
-   #      database: MYSQL
-   #      properties:
-   #         hibernate:
-   #            hbm2ddl:
-   #               auto: update
-   #            dialect: org.hibernate.dialect.MySQL8Dialect
-   #            show_sql: true
-   #   properties:
-   #      generate:
-   #         table: true
-   #      enable:
-   #         audit: true
-         #table:
-         #   index: false
-         
    audit:
       jpa:
          properties:
@@ -111,28 +91,29 @@ app:
          #table:
          #   index: false   
    
-   async:      
+   task:      
       common:
-         threadNamePrefix: "ASYNC-COMMON"
+         threadNamePrefix: "TASK-COMMON"
          corePoolSize: 2
          maxPoolSize: 8
          waitForJobsToCompleteOnShutdown: true
          allowCoreThreadTimeOut: true
       audit:
-         threadNamePrefix: "ASYNC-AUDIT"
+         threadNamePrefix: "TASK-AUDIT"
          corePoolSize: 2
          maxPoolSize: 8
          waitForJobsToCompleteOnShutdown: true
          allowCoreThreadTimeOut: true
 
    redis:
-      type: 1
-      testOnStartup: true
-      standalone:
-         host: 127.0.0.1
-         port: 6379
-         password: a3213c419771fbd1a05cdde7127e6393ef852db97328b21a45de700e9bbe85db
-         database: 0
+      common:
+         type: 1
+         testOnStartup: true
+         standalone:
+            host: 127.0.0.1
+            port: 6379
+            password: "a3213c419771fbd1a05cdde7127e6393ef852db97328b21a45de700e9bbe85db"
+            database: 0
             
    cache:
       groups:
@@ -162,12 +143,49 @@ app:
          "mail.smtp.ssl.protocols": "TLSv1.2"
 
    admin:
-      configFile: "file:{user.dir}/external/admin/config.json"
-      credentialFile: "file:{user.dir}/external/admin/credential-bcrypt.json"
-      #credentialFile: "file:{user.dir}/external/admin/credential-sha256.json"
+      configFile: "file:{user.dir}/extras/admin/config.json"
+      credentialFile: "file:{user.dir}/extras/admin/credential-bcrypt.json"
+      #credentialFile: "file:{user.dir}/extras/admin/credential-sha256.json"
+
+other:   
+   trxManager:
+      second:
+         datasource:
+            driver-class-name: "com.mysql.cj.jdbc.Driver"
+            jdbc-url: "jdbc:mysql://localhost:3306/springboot_sample_2?createDatabaseIfNotExist=true&autoReconnect=true"
+            username: "root"
+            password: "a3213c419771fbd1a05cdde7127e6393ef852db97328b21a45de700e9bbe85db"  
+         jpa:
+            properties:
+               hibernate:
+                  hbm2ddl:
+                     auto: update
+                  dialect: "org.hibernate.dialect.MySQL8Dialect"
+                  show_sql: true
+                  audit_identifier: "spring_sample_2"
+                  audit_bean_name: "auditSessionFactory_2"
+         audit:
+            datasource:
+               driver-class-name: "com.mysql.cj.jdbc.Driver"
+               jdbc-url: "jdbc:mysql://localhost:3306/__audit_springboot_sample_2?createDatabaseIfNotExist=true&autoReconnect=true"
+               username: "root"
+               password: "a3213c419771fbd1a05cdde7127e6393ef852db97328b21a45de700e9bbe85db" 
+            jpa:
+               properties:
+                  hibernate:
+                     hbm2ddl:
+                        auto: update
+                     show_sql: true
+            properties:
+               generate:
+                  table: true
+               enable:
+                  audit: true
+               table:
+                  index: false 
              
 logging:
-   file: logs/ideahut-springboot-3x-template.log
+   file: logs/ideahut-springboot-2x-template.log
    pattern:
       console: '%d %p [%X{traceId}] %F\(%M:%L\) : %msg%n'
       file: '%d %p [%X{traceId}] %F\(%M:%L\) : %msg%n'

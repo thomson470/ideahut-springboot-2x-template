@@ -1,14 +1,18 @@
 package net.ideahut.springboot.template.controller;
 
-import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.apache.commons.io.IOUtils;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,7 +23,9 @@ import net.ideahut.springboot.report.ReportHandler;
 import net.ideahut.springboot.report.ReportInput;
 import net.ideahut.springboot.report.ReportType;
 import net.ideahut.springboot.template.object.ReportData;
+import net.ideahut.springboot.template.properties.AppProperties;
 import net.ideahut.springboot.util.FrameworkUtil;
+import net.ideahut.springboot.util.StringUtil;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.util.JRLoader;
 
@@ -29,10 +35,29 @@ import net.sf.jasperreports.engine.util.JRLoader;
 @ComponentScan
 @RestController
 @RequestMapping("/report")
-class ReportController {
+class ReportController implements InitializingBean {
 	
 	@Autowired
+	private AppProperties appProperties;
+	@Autowired
 	private ReportHandler reportHandler;
+	
+	private byte[] template;
+	private byte[] imageHeader;
+	private byte[] imageDetail;
+	
+	
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		String path = appProperties.getReportPath();
+		Assert.hasLength(path, "AppProperties.reportPath is required");
+		path = FrameworkUtil.replacePath(appProperties.getReportPath());
+		path = StringUtil.removeEnd(path, "/");
+		PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(this.getClass().getClassLoader());
+		template = IOUtils.toByteArray(resolver.getResource(path + "/sample.jasper").getInputStream());
+		imageHeader = IOUtils.toByteArray(resolver.getResource(path + "/tree1.png").getInputStream());
+		imageDetail = IOUtils.toByteArray(resolver.getResource(path + "/tree2.png").getInputStream());
+	}
 	
 	@GetMapping
 	protected ResponseEntity<StreamingResponseBody> get(
@@ -41,18 +66,14 @@ class ReportController {
 		ReportType type = getType(name);
 		StreamingResponseBody body = response -> {
 			try {
-				InputStream template = ReportController.class.getClassLoader().getResourceAsStream("report/sample.jasper");
-				InputStream imageHeader = ReportController.class.getClassLoader().getResourceAsStream("report/tree1.png");
-				InputStream imageDetail = ReportController.class.getClassLoader().getResourceAsStream("report/tree2.png");
-				JasperReport report = (JasperReport) JRLoader.loadObject(template);
-				
+				JasperReport report = (JasperReport) JRLoader.loadObject(new ByteArrayInputStream(template));
 				ReportInput input = new ReportInput();
 				input.setType(type);
 				input.setReport(report);
 				input.setParameter("MAIN_TITLE", "Contoh Report");
 				input.setParameter("SUB_TITLE", type.name());
-				input.setParameter("IMAGE_HEADER", imageHeader);
-				input.setParameter("IMAGE_DETAIL", imageDetail);
+				input.setParameter("IMAGE_HEADER", new ByteArrayInputStream(imageHeader));
+				input.setParameter("IMAGE_DETAIL", new ByteArrayInputStream(imageDetail));
 				
 				List<ReportData> datasource = new ArrayList<>();
 				for (long i = 0; i < 100; i++) {

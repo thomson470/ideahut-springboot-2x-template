@@ -12,9 +12,16 @@ import net.ideahut.springboot.admin.AdminHandlerImpl;
 import net.ideahut.springboot.admin.AdminSecurity;
 import net.ideahut.springboot.mapper.DataMapper;
 import net.ideahut.springboot.security.RedisMemoryCredential;
+import net.ideahut.springboot.security.SecurityCredential;
 import net.ideahut.springboot.template.AppConstants;
-import net.ideahut.springboot.template.AppProperties;
+import net.ideahut.springboot.template.properties.AppProperties;
 import net.ideahut.springboot.template.support.GridSupport;
+
+/*
+ * Konfigurasi Admin
+ * Dapat diakses menggunakan browser
+ * http://<host>: <port>/_
+ */
 
 @Configuration
 class AdminConfig {
@@ -25,10 +32,10 @@ class AdminConfig {
 	private AppProperties appProperties;
 	
 	
-	@Bean(name = AppConstants.Bean.Admin.HANDLER)
+	@Bean()
 	protected AdminHandler adminHandler(
 		DataMapper dataMapper,
-		RedisTemplate<String, byte[]> redisTemplate
+		@Qualifier(AppConstants.Bean.Redis.COMMON) RedisTemplate<String, byte[]> redisTemplate
 	) {
 		AppProperties.Admin admin = appProperties.getAdmin();
 		return new AdminHandlerImpl()
@@ -41,10 +48,10 @@ class AdminConfig {
 		.setRedisTemplate(redisTemplate);
 	}
 	
-	@Bean(name = AppConstants.Bean.Admin.CREDENTIAL)
+	@Bean(name = AppConstants.Bean.Credential.ADMIN)
 	protected RedisMemoryCredential adminCredential(
 		DataMapper dataMapper,
-		RedisTemplate<String, byte[]> redisTemplate
+		@Qualifier(AppConstants.Bean.Redis.COMMON) RedisTemplate<String, byte[]> redisTemplate
 	) {
 		AppProperties.Admin admin = appProperties.getAdmin();
 		return new RedisMemoryCredential()
@@ -55,27 +62,27 @@ class AdminConfig {
 	}
 	
 	
-	@Bean(name = AppConstants.Bean.Admin.SECURITY)
+	@Bean(name = AppConstants.Bean.Security.ADMIN)
 	protected AdminSecurity adminSecurity(
 		DataMapper dataMapper,
-		@Qualifier(AppConstants.Bean.Admin.CREDENTIAL) RedisMemoryCredential adminCredential,
-		@Qualifier(AppConstants.Bean.Admin.HANDLER) AdminHandler adminHandler
+		AdminHandler adminHandler,
+		@Qualifier(AppConstants.Bean.Credential.ADMIN) SecurityCredential credential
 	) {
 		return new AdminSecurity()
-		.setCredential(adminCredential)
+		.setCredential(credential)
 		.setDataMapper(dataMapper)
+		//.setEnableRemoteHost(true)
+		//.setEnableUserAgent(true)
 		.setProperties(adminHandler.getProperties());
-		
 	}
 	
-	
 	/*
-	@Bean(name = AppConstants.Bean.Admin.SECURITY)
+	@Bean(name = AppConstants.Bean.Security.ADMIN)
 	protected BasicAuthSecurity adminSecurity(
-		@Qualifier(AppConstants.Bean.Admin.CREDENTIAL) RedisMemoryCredential adminCredential
+		@Qualifier(AppConstants.Bean.Credential.ADMIN) SecurityCredential credential
 	) {
 		return new BasicAuthSecurity()
-		.setCredential(adminCredential)
+		.setCredential(credential)
 		.setRealm("Admin");
 	}
 	*/

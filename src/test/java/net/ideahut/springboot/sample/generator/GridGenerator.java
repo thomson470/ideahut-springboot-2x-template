@@ -16,7 +16,7 @@ public class GridGenerator {
 		directory.mkdirs();
 		System.setProperty("server.port", "0");
 		SpringApplication application = new SpringApplication(Application.class);
-		//application.setLazyInitialization(false);
+		application.setLazyInitialization(false);
 		application.setLogStartupInfo(true);
 		ConfigurableApplicationContext context = application.run(args);
 		GridTool.generate(context, directory, 2000L);

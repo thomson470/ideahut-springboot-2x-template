@@ -32,7 +32,9 @@ import net.ideahut.springboot.mapper.DataMapper;
 import net.ideahut.springboot.message.MessageHandler;
 import net.ideahut.springboot.object.Message;
 import net.ideahut.springboot.object.Option;
+import net.ideahut.springboot.template.properties.AppProperties;
 import net.ideahut.springboot.util.RequestUtil;
+import net.ideahut.springboot.util.StringUtil;
 
 @Service
 public class MessageServiceImpl implements MessageService, BeanReload, BeanConfigure<MessageService> {
@@ -57,6 +59,8 @@ public class MessageServiceImpl implements MessageService, BeanReload, BeanConfi
 	private DataMapper dataMapper;
 	@Autowired
 	private RedisTemplate<String, byte[]> redisTemplate;
+	@Autowired
+	private AppProperties appProperties;
 	
 	@Override
 	public Callable<MessageService> configureBean(ApplicationContext applicationContext) {
@@ -150,9 +154,9 @@ public class MessageServiceImpl implements MessageService, BeanReload, BeanConfi
 	 */
 	private Map<String, byte[]> loadResource(String type) throws Exception {
 		Map<String, byte[]> map = new HashMap<>();
+		String path = StringUtil.removeEnd(appProperties.getMessagePath(), "/");
 		PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(this.getClass().getClassLoader());
-		String prefix = "/message/" + type + "/";
-		Resource[] resources = resolver.getResources("classpath:" + prefix + "**/*.json");
+		Resource[] resources = resolver.getResources(path + "/" + type + "/*.json");
 		for (Resource resource : resources) {
 			String language = resource.getFilename().replace(".json", "");
 			byte[] bytes = IOUtils.toByteArray(resource.getInputStream());

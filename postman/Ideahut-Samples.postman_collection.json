@@ -272,7 +272,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\r\n    \"name\": \"AutoGenStrIdHardDel\",\r\n    \"ids\": [\r\n        \"2024-102111-1632-20325-25200-0001\",\r\n        \"2024-101056-1708-46195-25200-0001\",\r\n        \"2024-101056-1711-09428-25200-0002\"\r\n    ]\r\n}",
+											"raw": "{\r\n    \"name\": \"AutoGenStrIdHardDel\",\r\n    \"ids\": [\r\n        \"2024-103145-2039-03329-25200-0001\",\r\n        \"2024-101056-1708-46195-25200-0001\",\r\n        \"2024-101056-1711-09428-25200-0002\"\r\n    ]\r\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -5804,6 +5804,307 @@
 							"path": [
 								"message",
 								"portal"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Scheduler",
+			"item": [
+				{
+					"name": "Groups",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "{{url}}/scheduler/running",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"scheduler",
+								"running"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "{{url}}/admin/scheduler/start",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"scheduler",
+								"start"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Stop",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "{{url}}/admin/scheduler/stop",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"scheduler",
+								"stop"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Running",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "{{url}}/admin/scheduler/running",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"scheduler",
+								"running"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Metadata",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "{{url}}/admin/scheduler/metadata",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"scheduler",
+								"metadata"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Pause",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "triggerId",
+									"value": "ff8080818e5ba97a018e5bab1bf80000",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{url}}/admin/cheduler/pause",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"cheduler",
+								"pause"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Resume",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "triggerId",
+									"value": "ff8080818e5ba97a018e5bab1bf80000",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{url}}/admin/scheduler/resume",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"scheduler",
+								"resume"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Trigger",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "triggerId",
+									"value": "ff8080818e5ba97a018e5bab1bf80000",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{url}}/admin/scheduler/trigger",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"scheduler",
+								"trigger"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "triggerId",
+									"value": "ff8080818e5ba97a018e5bab1bf80000",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{url}}/admin/scheduler/delete",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"scheduler",
+								"delete"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "triggerId",
+									"value": "ff8080818e5ba97a018e5bab1bf80000",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{url}}/admin/scheduler/add",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"scheduler",
+								"add"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Status",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n    \"ff8080818e5b2907018e5b2de1e90001\",\n    \"ff8080818e5b2907018e5b2ed9f50002\",\n    \"ff8080818e5ba97a018e5bab1bf80000\",\n    \"ff8080818e5ba97a018e5bab1bf8000x\"\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/admin/scheduler/status",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"scheduler",
+								"status"
 							]
 						}
 					},

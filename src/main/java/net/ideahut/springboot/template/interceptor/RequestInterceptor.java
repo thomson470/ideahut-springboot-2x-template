@@ -15,8 +15,8 @@ import org.springframework.web.servlet.resource.ResourceHttpRequestHandler;
 import net.ideahut.springboot.admin.AdminHandler;
 import net.ideahut.springboot.audit.AuditInfo;
 import net.ideahut.springboot.template.AppConstants;
-import net.ideahut.springboot.template.AppProperties;
 import net.ideahut.springboot.template.Application;
+import net.ideahut.springboot.template.properties.AppProperties;
 import net.ideahut.springboot.template.service.MessageService;
 
 @Component

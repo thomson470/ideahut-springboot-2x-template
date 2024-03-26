@@ -46,8 +46,6 @@ import net.ideahut.springboot.entity.EntityReplica;
 import net.ideahut.springboot.entity.EntityTrxManager;
 import net.ideahut.springboot.entity.SessionCallable;
 import net.ideahut.springboot.entity.TrxManagerInfo;
-import net.ideahut.springboot.job.JobGroupDto;
-import net.ideahut.springboot.job.JobService;
 import net.ideahut.springboot.mapper.DataMapper;
 import net.ideahut.springboot.object.MapStringObject;
 import net.ideahut.springboot.object.Page;
@@ -79,7 +77,7 @@ class TestController {
 	@Autowired
 	private CrudHandler crudHandler;
 	@Autowired
-	@Qualifier(AppConstants.Bean.Async.COMMON)
+	@Qualifier(AppConstants.Bean.Task.COMMON)
 	private TaskHandler taskHandler;
 	@Autowired
 	private AuditHandler auditHandler;
@@ -277,17 +275,6 @@ class TestController {
 		byte[] data = IOUtils.toByteArray(RequestContext.currentContext().getRequest().getInputStream());		
 		CrudRequest crudRequest = crudHandler.getRequest(data);
 		return Result.success(crudRequest);
-	}
-	
-	
-	
-	@Autowired
-	private JobService jobService;
-	
-	@Public
-	@GetMapping("/job/groups")
-	protected List<JobGroupDto> jobGroups() {
-		return jobService.getGroups(null, null);
 	}
 	
 	

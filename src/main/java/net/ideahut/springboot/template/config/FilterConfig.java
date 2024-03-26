@@ -12,7 +12,7 @@ import net.ideahut.springboot.filter.DefaultRequestFilter;
 import net.ideahut.springboot.filter.SecurityAuthorizationFilter;
 import net.ideahut.springboot.security.SecurityAuthorization;
 import net.ideahut.springboot.template.AppConstants;
-import net.ideahut.springboot.template.AppProperties;
+import net.ideahut.springboot.template.properties.AppProperties;
 import net.ideahut.springboot.util.FrameworkUtil;
 
 /*
@@ -42,8 +42,8 @@ class FilterConfig {
 	
 	@Bean
 	protected FilterRegistrationBean<SecurityAuthorizationFilter> adminFilter(
-		@Qualifier(AppConstants.Bean.Admin.HANDLER) AdminHandler adminHandler,
-		@Qualifier(AppConstants.Bean.Admin.SECURITY) SecurityAuthorization adminSecurity
+		AdminHandler adminHandler,
+		@Qualifier(AppConstants.Bean.Security.ADMIN) SecurityAuthorization adminSecurity
 	) {
 		return FrameworkUtil.createFilterBean(
 			environment,

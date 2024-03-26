@@ -22,12 +22,19 @@ import net.ideahut.springboot.init.InitHandler;
 import net.ideahut.springboot.task.TaskHandler;
 import net.ideahut.springboot.util.FrameworkUtil;
 
+/*
+ * 1. Main Class, untuk eksekusi aplikasi.
+ *    - Method: main()
+ * 
+ * 2. Bean-bean dapat direconfigure sesuai priority-nya.
+ *    - Method: onApplicationEvent() -> implements ApplicationListener<ContextRefreshedEvent>
+ *    
+ */
+
 @Slf4j
 @SpringBootApplication
 public class Application extends SpringBootServletInitializer implements ApplicationListener<ContextRefreshedEvent> {
 	
-	@Autowired
-	private AppProperties appProperties;
 	@Autowired
 	private ServletWebServerApplicationContext webServerApplicationContext;
 	
@@ -39,7 +46,7 @@ public class Application extends SpringBootServletInitializer implements Applica
 	
 	public static void main(String[] args) {
 		SpringApplication application = new SpringApplication(Application.class);
-		//application.setLazyInitialization(false);
+		application.setLazyInitialization(false);
 		application.setLogStartupInfo(true);
 		application.run(args);
 	}
@@ -53,12 +60,13 @@ public class Application extends SpringBootServletInitializer implements Applica
 	public void onApplicationEvent(ContextRefreshedEvent event) {
 		ready = false;
 		ApplicationContext applicationContext = event.getApplicationContext();
-		log.info("**** Initializing application '" + appProperties.getInstanceId() + "'");
-		TaskHandler commonAsync = applicationContext.getBean(AppConstants.Bean.Async.COMMON, TaskHandler.class);
-		commonAsync.execute(() -> {
+		log.info("**** Initializing application '" + webServerApplicationContext.getId() + "'");
+		
+		TaskHandler taskHandler = applicationContext.getBean(AppConstants.Bean.Task.COMMON, TaskHandler.class);
+		taskHandler.execute(() -> {
 			try {
 				BeanConfigure.runBeanConfigure(
-					commonAsync, 
+					taskHandler, 
 					applicationContext, 
 					EntityTrxManager.class, 
 					AuditHandler.class
@@ -67,7 +75,7 @@ public class Application extends SpringBootServletInitializer implements Applica
 				throw FrameworkUtil.exception(e);
 			}
 			InitHandler initHandler = applicationContext.getBean(InitHandler.class);
-			commonAsync.execute(new Runnable() {
+			taskHandler.execute(new Runnable() {
 				@Override
 				public void run() {
 					try {
@@ -79,6 +87,21 @@ public class Application extends SpringBootServletInitializer implements Applica
 					}
 				}
 			});
+			
+			/*
+			SchedulerHandler schedulerHandler = applicationContext.getBean(SchedulerHandler.class);
+			taskHandler.execute(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						schedulerHandler.start();
+					} catch (Exception e) {
+						log.error("SchedulerHandler", e);
+					}
+				}
+			});
+			*/
+			
 			ready = true;
 			
 			// Inisialisasi Servlet dengan mengirim request ke endpoint /warmup (Lihat WarmUpController)

@@ -3,8 +3,11 @@ package net.ideahut.springboot.template.service;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
@@ -41,7 +44,7 @@ public class JobServiceImpl implements JobService {
 	
 	@Autowired
 	private EntityTrxManager entityTrxManager;
-	@Qualifier(AppConstants.Bean.Async.COMMON)
+	@Qualifier(AppConstants.Bean.Task.COMMON)
 	@Autowired
 	private TaskHandler taskHandler;
 	@Autowired
@@ -71,10 +74,54 @@ public class JobServiceImpl implements JobService {
 		}
 		return dtos;
 	}
+	
+	@Override
+	public List<JobGroupDto> getGroups(String instanceId, Boolean isActive) {
+		TrxManagerInfo trxManagerInfo = entityTrxManager.getDefaultTrxManagerInfo();
+		List<JobGroup> list = trxManagerInfo.transaction(new SessionCallable<List<JobGroup>>() {
+			@Override
+			public List<JobGroup> call(Session session) throws Exception {
+				List<Object> parameters = new ArrayList<>();
+				String hql = 
+				"select b " + 
+				"from JobTrigger a " + 
+				"join a.group b " + 
+				"where 1=1 ";
+				if (isActive != null) {
+					Character active = Boolean.TRUE.equals(isActive) ? AppConstants.Boolean.YES : AppConstants.Boolean.NO;
+					parameters.add(active);
+					hql += "and a.isActive=?" + parameters.size() + " and b.isActive=?" + parameters.size() + " ";							
+				}
+				hql += "and (a.instance.instanceId is null ";
+				String iid = instanceId != null ? instanceId.trim() : "";
+				if (!iid.isEmpty()) {
+					parameters.add(iid);
+					hql += "or a.instance.instanceId=?" + parameters.size();
+					
+				}
+				hql += ") ";
+				Query<JobGroup> query = session.createQuery(hql, JobGroup.class);
+				for (int i = 0; i < parameters.size(); i++) {
+					query.setParameter(i + 1, parameters.get(i));
+				}
+				List<JobGroup> list = query.getResultList();
+				trxManagerInfo.loadLazy(list, JobGroup.class);
+				return list;
+			}
+		});
+		List<JobGroupDto> groups = new ArrayList<>();
+		while(!list.isEmpty()) {
+			JobGroup eGroup = list.remove(0);
+			JobGroupDto group = new JobGroupDto();
+			BeanUtils.copyProperties(eGroup, group);
+			groups.add(group);
+		}
+		return groups;
+	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public List<JobGroupDto> getGroups(String instanceId, Boolean isActive, Collection<String> groupIds) {
+	public List<JobGroupDto> getGroupsAndTriggers(String instanceId, Boolean isActive, Collection<String> groupIds, Boolean includeConfigs) {
 		TrxManagerInfo trxManagerInfo = entityTrxManager.getDefaultTrxManagerInfo();
 		Future<Object[]> futureTrigger = taskHandler.submit(new Callable<Object[]>() {
 			@Override
@@ -161,55 +208,58 @@ public class JobServiceImpl implements JobService {
 				});
 			}
 		});
-		Future<List<JobTriggerConfiguration>> futureConfig = taskHandler.submit(new Callable<List<JobTriggerConfiguration>>() {
-			@Override
-			public List<JobTriggerConfiguration> call() throws Exception {
-				return trxManagerInfo.transaction(new SessionCallable<List<JobTriggerConfiguration>>() {
-					@Override
-					public List<JobTriggerConfiguration> call(Session session) throws Exception {
-						List<Object> parameters = new ArrayList<>();
-						String hql = 
-						"from JobTriggerConfiguration " + 
-					    "where id.triggerId IN (" +
-							"select a.triggerId " +
-							"from JobTrigger a " + 
-							"join a.type b " +
-							"join a.group c " + 
-							"where 1=1 ";
-						if (isActive != null) {
-							Character active = Boolean.TRUE.equals(isActive) ? AppConstants.Boolean.YES : AppConstants.Boolean.NO;
-							parameters.add(active);
-							hql += "and a.isActive=?" + parameters.size() + " and c.isActive=?" + parameters.size() + " ";							
+		Future<List<JobTriggerConfiguration>> futureConfig = null;
+		if (Boolean.TRUE.equals(includeConfigs)) {
+			futureConfig = taskHandler.submit(new Callable<List<JobTriggerConfiguration>>() {
+				@Override
+				public List<JobTriggerConfiguration> call() throws Exception {
+					return trxManagerInfo.transaction(new SessionCallable<List<JobTriggerConfiguration>>() {
+						@Override
+						public List<JobTriggerConfiguration> call(Session session) throws Exception {
+							List<Object> parameters = new ArrayList<>();
+							String hql = 
+							"from JobTriggerConfiguration " + 
+						    "where id.triggerId IN (" +
+								"select a.triggerId " +
+								"from JobTrigger a " + 
+								"join a.type b " +
+								"join a.group c " + 
+								"where 1=1 ";
+							if (isActive != null) {
+								Character active = Boolean.TRUE.equals(isActive) ? AppConstants.Boolean.YES : AppConstants.Boolean.NO;
+								parameters.add(active);
+								hql += "and a.isActive=?" + parameters.size() + " and c.isActive=?" + parameters.size() + " ";							
+							}
+							hql += "and (a.instance.instanceId is null ";
+							String iid = instanceId != null ? instanceId.trim() : "";
+							if (!iid.isEmpty()) {
+								parameters.add(iid);
+								hql += "or a.instance.instanceId=?" + parameters.size();
+								
+							}
+							hql += ") ";
+							if (groupIds != null && !groupIds.isEmpty()) {
+								parameters.add(groupIds);
+								hql += "and c.groupId in (?" + parameters.size() + ") ";
+								
+							}					
+							hql += ")";
+							Query<JobTriggerConfiguration> query = session.createQuery(hql, JobTriggerConfiguration.class);
+							for (int i = 0; i < parameters.size(); i++) {
+								query.setParameter(i + 1, parameters.get(i));
+							}
+							List<JobTriggerConfiguration> configurations = query.getResultList();
+							trxManagerInfo.loadLazy(configurations, JobTriggerConfiguration.class);
+							return configurations;
 						}
-						hql += "and (a.instance.instanceId is null ";
-						String iid = instanceId != null ? instanceId.trim() : "";
-						if (!iid.isEmpty()) {
-							parameters.add(iid);
-							hql += "or a.instance.instanceId=?" + parameters.size();
-							
-						}
-						hql += ") ";
-						if (groupIds != null && !groupIds.isEmpty()) {
-							parameters.add(groupIds);
-							hql += "and c.groupId in (?" + parameters.size() + ") ";
-							
-						}					
-						hql += ")";
-						Query<JobTriggerConfiguration> query = session.createQuery(hql, JobTriggerConfiguration.class);
-						for (int i = 0; i < parameters.size(); i++) {
-							query.setParameter(i + 1, parameters.get(i));
-						}
-						List<JobTriggerConfiguration> configurations = query.getResultList();
-						trxManagerInfo.loadLazy(configurations, JobTriggerConfiguration.class);
-						return configurations;
-					}
-				});
-			}
-		});
+					});
+				}
+			});
+		}
 		try {
 			Object[] objects = (Object[]) futureTrigger.get();
 			List<JobGroupDto> groups = (List<JobGroupDto>) objects[0];
-			if (groups != null && !groups.isEmpty()) {
+			if (groups != null && !groups.isEmpty() && futureConfig != null) {
 				Map<String, Integer[]> indexes = (Map<String, Integer[]>) objects[1];
 				List<JobTriggerConfiguration> configs = (List<JobTriggerConfiguration>) futureConfig.get();
 				while (!configs.isEmpty()) {
@@ -227,14 +277,9 @@ public class JobServiceImpl implements JobService {
 			throw FrameworkUtil.exception(e);
 		}
 	}
-
+	
 	@Override
-	public List<JobGroupDto> getGroups(String instanceId, Collection<String> groupIds) {
-		return getGroups(instanceId, null, groupIds);
-	}
-
-	@Override
-	public JobTriggerDto getTrigger(String triggerId) {
+	public JobTriggerDto getTrigger(String triggerId, Boolean includeConfigs) {
 		TrxManagerInfo trxManagerInfo = entityTrxManager.getDefaultTrxManagerInfo();
 		Future<JobTriggerDto> futureTrigger = taskHandler.submit(new Callable<JobTriggerDto>() {
 			@Override
@@ -282,27 +327,30 @@ public class JobServiceImpl implements JobService {
 				});
 			}			
 		});
-		Future<List<JobTriggerConfiguration>> futureConfig = taskHandler.submit(new Callable<List<JobTriggerConfiguration>>() {
-			@Override
-			public List<JobTriggerConfiguration> call() throws Exception {
-				return trxManagerInfo.transaction(new SessionCallable<List<JobTriggerConfiguration>>() {
-					@Override
-					public List<JobTriggerConfiguration> call(Session session) throws Exception {
-						String hql = 
-						"from JobTriggerConfiguration " + 
-						"where id.triggerId=?1 ";
-						Query<JobTriggerConfiguration> query = session.createQuery(hql, JobTriggerConfiguration.class);
-						query.setParameter(1, triggerId);						
-						List<JobTriggerConfiguration> configurations = query.getResultList();
-						trxManagerInfo.loadLazy(configurations, JobTriggerConfiguration.class);
-						return configurations;
-					}
-				});
-			}			
-		});
+		Future<List<JobTriggerConfiguration>> futureConfig = null;
+		if (Boolean.TRUE.equals(includeConfigs)) {
+			futureConfig = taskHandler.submit(new Callable<List<JobTriggerConfiguration>>() {
+				@Override
+				public List<JobTriggerConfiguration> call() throws Exception {
+					return trxManagerInfo.transaction(new SessionCallable<List<JobTriggerConfiguration>>() {
+						@Override
+						public List<JobTriggerConfiguration> call(Session session) throws Exception {
+							String hql = 
+							"from JobTriggerConfiguration " + 
+							"where id.triggerId=?1 ";
+							Query<JobTriggerConfiguration> query = session.createQuery(hql, JobTriggerConfiguration.class);
+							query.setParameter(1, triggerId);						
+							List<JobTriggerConfiguration> configurations = query.getResultList();
+							trxManagerInfo.loadLazy(configurations, JobTriggerConfiguration.class);
+							return configurations;
+						}
+					});
+				}			
+			});
+		}
 		try {
 			JobTriggerDto trigger = futureTrigger.get();
-			if (trigger != null) {
+			if (trigger != null && futureConfig != null) {
 				List<JobTriggerConfiguration> configs = futureConfig.get();
 				while (!configs.isEmpty()) {
 					JobTriggerConfiguration config = configs.remove(0);
@@ -316,12 +364,50 @@ public class JobServiceImpl implements JobService {
 	}
 
 	@Override
+	public Map<String, JobTriggerDto> getTriggerMap(Collection<String> triggerIds) {
+		if (triggerIds != null && !triggerIds.isEmpty()) {
+			Set<String> ids = new LinkedHashSet<>(triggerIds);
+			TrxManagerInfo trxManagerInfo = entityTrxManager.getDefaultTrxManagerInfo();
+			return trxManagerInfo.transaction(new SessionCallable<Map<String, JobTriggerDto>>() {
+				@Override
+				public Map<String, JobTriggerDto> call(Session session) throws Exception {
+					Query<Object[]> query = session
+					.createQuery(
+						"select a, b " +
+						"from JobTrigger a " +
+						"join a.group b " +
+						"where a.triggerId in (?1)", 
+					Object[].class);
+					List<Object[]> items = query.setParameter(1, ids).getResultList();
+					Map<String, JobTriggerDto> triggers = new LinkedHashMap<>();
+					while (!items.isEmpty()) {
+						Object[] item = items.remove(0);
+						JobTrigger eTrigger = (JobTrigger) item[0];
+						trxManagerInfo.loadLazy(eTrigger);
+						JobTriggerDto trigger = new JobTriggerDto();
+						BeanUtils.copyProperties(eTrigger, trigger, "configurations");
+						JobGroup eGroup = (JobGroup) item[1];
+						trxManagerInfo.loadLazy(eGroup);
+						JobGroupDto group = new JobGroupDto();
+						BeanUtils.copyProperties(eGroup, group, "triggers");
+						trigger.setGroup(group);
+						triggers.put(trigger.getTriggerId(), trigger);
+					}
+					return triggers;
+				}
+			});
+		}
+		return new LinkedHashMap<>();
+	}
+	
+
+	@Override
 	public void setTypeIsRunning(String typeId, Boolean isRunning) {
 		TrxManagerInfo trxManagerInfo = entityTrxManager.getDefaultTrxManagerInfo();
 		trxManagerInfo.transaction(true, new SessionCallable<Void>() {
 			@Override
 			public Void call(Session session) throws Exception {
-				session.createQuery("update JobType set isRunning = ?1 WHERE typeId = ?2", Object.class)
+				session.createQuery("update JobType set isRunning = ?1 WHERE typeId = ?2")
 				.setParameter(1, Boolean.TRUE.equals(isRunning) ? AppConstants.Boolean.YES : AppConstants.Boolean.NO)
 				.setParameter(2, typeId)
 				.executeUpdate();
@@ -336,7 +422,7 @@ public class JobServiceImpl implements JobService {
 		trxManagerInfo.transaction(true, new SessionCallable<Void>() {
 			@Override
 			public Void call(Session session) throws Exception {
-				session.createQuery("update JobType set isRunning = ?1", Object.class)
+				session.createQuery("update JobType set isRunning = ?1")
 				.setParameter(1, AppConstants.Boolean.NO)
 				.executeUpdate();
 				return null;
@@ -356,8 +442,7 @@ public class JobServiceImpl implements JobService {
 					"lastRunTime = ?2," + 
 					"lastRunTriggerId = ?3 " +
 					(lastRunData != null ? ", lastRunData = ?4 " : "") +
-					"where typeId = " + (lastRunData != null ? "?5" : "?4"),
-					Object.class
+					"where typeId = " + (lastRunData != null ? "?5" : "?4")
 				)
 				.setParameter(1, Boolean.TRUE.equals(isRunning) ? AppConstants.Boolean.YES : AppConstants.Boolean.NO)
 				.setParameter(2, lastRunTime)
@@ -384,8 +469,7 @@ public class JobServiceImpl implements JobService {
 					"update JobTrigger set " + 
 					"lastRunTime = ?1 " +
 					(lastRunData != null ? ", lastRunData = ?2 " : "") +
-					"where triggerId = "  + (lastRunData != null ? "?3" : "?2"),
-					Object.class
+					"where triggerId = "  + (lastRunData != null ? "?3" : "?2")
 				)
 				.setParameter(1, lastRunTime);
 				if (lastRunData != null) {				
@@ -398,6 +482,6 @@ public class JobServiceImpl implements JobService {
 				return null;
 			}
 		});
-	}
+	}		
 
 }

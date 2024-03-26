@@ -18,7 +18,17 @@ import net.ideahut.springboot.context.RequestContext;
 import net.ideahut.springboot.exception.ResultException;
 import net.ideahut.springboot.exception.ResultRuntimeException;
 import net.ideahut.springboot.object.Result;
+import net.ideahut.springboot.template.properties.AppProperties;
 import net.ideahut.springboot.util.ErrorUtil;
+
+/*
+ * 1. Untuk menghandle semua error yang terjadi di aplikasi
+ *    - Method: handleAllException()
+ *    
+ * 2. Membuat semua response ke class net.ideahut.springboot.object.Result
+ *    - Method: beforeBodyWrite()
+ * 
+ */
 
 @Slf4j
 @ControllerAdvice

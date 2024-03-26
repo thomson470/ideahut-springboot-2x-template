@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.List;
 
 import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +36,9 @@ import net.ideahut.springboot.grid.GridHandler;
 import net.ideahut.springboot.grid.GridHandlerImpl;
 import net.ideahut.springboot.init.InitHandler;
 import net.ideahut.springboot.init.InitHandlerImpl;
+import net.ideahut.springboot.job.JobService;
+import net.ideahut.springboot.job.SchedulerHandler;
+import net.ideahut.springboot.job.SchedulerHandlerImpl;
 import net.ideahut.springboot.mail.MailHandler;
 import net.ideahut.springboot.mail.MailHandlerImpl;
 import net.ideahut.springboot.mapper.DataMapper;
@@ -48,17 +50,22 @@ import net.ideahut.springboot.sysparam.SysParamHandlerImpl;
 import net.ideahut.springboot.sysparam.SysParamReloader;
 import net.ideahut.springboot.task.TaskHandler;
 import net.ideahut.springboot.template.AppConstants;
-import net.ideahut.springboot.template.AppProperties;
-import net.ideahut.springboot.template.AppProperties.Audit;
 import net.ideahut.springboot.template.entity.EntityFill;
 import net.ideahut.springboot.template.entity.SysParam;
+import net.ideahut.springboot.template.properties.AppProperties;
 import net.ideahut.springboot.template.support.GridSupport;
 import net.ideahut.springboot.util.FrameworkUtil;
 
 /*
- * Konfigurasi handler
+ * Konfigurasi handler:
  * - AuditHandler
+ * - CacheGroupHandler
+ * - CacheHandler
  * - CrudHandler
+ * - ReportHandler
+ * - MailHandler
+ * - SysParamHandler
+ * - SchedulerHandler
  */
 @Configuration
 class HandlerConfig {
@@ -84,20 +91,18 @@ class HandlerConfig {
 
 	@Bean
 	protected AuditHandler auditHandler(
-		@Qualifier(AppConstants.Bean.ENTITY_TRX_MANAGER) EntityTrxManager entityTrxManager,
-		@Qualifier(AppConstants.Bean.Async.AUDIT) TaskHandler auditAsync,
-		@Qualifier(AppConstants.Bean.Audit.SESSION_FACTORY) SessionFactory auditSessionFactory
+		EntityTrxManager entityTrxManager,
+		@Qualifier(AppConstants.Bean.Task.AUDIT) TaskHandler taskHandler
 	) {
-		Audit audit = appProperties.getAudit();
 		return new DatabaseMultiAuditHandler()
 		.setEntityTrxManager(entityTrxManager)
-		.setProperties(audit.getProperties())
-		.setTaskHandler(auditAsync)
+		.setProperties(appProperties.getAudit().getProperties())
+		.setTaskHandler(taskHandler)
 		.setRejectNonAuditEntity(true);
 		/*
 		return new DatabaseSingleAuditHandler()
 		.setEntityTrxManager(entityTrxManager)
-		.setProperties(audit.getProperties())
+		.setProperties(appProperties.getAudit().getProperties())
 		.setTaskHandler(auditAsync);
 		*/
 	}
@@ -106,25 +111,25 @@ class HandlerConfig {
 	protected CacheGroupHandler cacheGroupHandler(
 		DataMapper dataMapper,
 		RedisTemplate<String, byte[]> redisTemplate,
-		@Qualifier(AppConstants.Bean.Async.COMMON) TaskHandler cacheAsync
+		@Qualifier(AppConstants.Bean.Task.COMMON) TaskHandler taskHandler
 	) throws Exception {
 		return new RedisCacheGroupHandler()
 		.setDataMapper(dataMapper)
 		.setGroups(appProperties.getCache().getGroups())
 		.setRedisTemplate(redisTemplate)
-		.setTaskHandler(cacheAsync);
+		.setTaskHandler(taskHandler);
 	}
 	
 	@Bean
 	protected CacheHandler cacheHandler(
 		DataMapper dataMapper,
-		RedisTemplate<String, byte[]> redisTemplate,
-		@Qualifier(AppConstants.Bean.Async.COMMON) TaskHandler cacheAsync
+		@Qualifier(AppConstants.Bean.Redis.COMMON) RedisTemplate<String, byte[]> redisTemplate,
+		@Qualifier(AppConstants.Bean.Task.COMMON) TaskHandler taskHandler
 	) throws Exception {
 		return new RedisCacheHandler()
 		.setDataMapper(dataMapper)
 		.setRedisTemplate(redisTemplate)
-		.setTaskHandler(cacheAsync)
+		.setTaskHandler(taskHandler)
 		.setLimit(100)
 		.setNullable(true)
 		.setPrefix("_test");
@@ -137,7 +142,7 @@ class HandlerConfig {
 	
 	@Bean
 	protected MailHandler mailHandler(
-    	@Qualifier(AppConstants.Bean.Async.COMMON) TaskHandler taskHandler
+    	@Qualifier(AppConstants.Bean.Task.COMMON) TaskHandler taskHandler
     ) {
 		return new MailHandlerImpl()
 		.setTaskHandler(taskHandler)
@@ -198,9 +203,21 @@ class HandlerConfig {
 	}
 	
 	@Bean
+	protected SchedulerHandler schedulerHandler(
+		DataMapper dataMapper,
+		JobService jobService
+	) {
+		return new SchedulerHandlerImpl()
+		.setApplicationContext(applicationContext)
+		.setInstanceId(appProperties.getInstanceId())
+		.setJobPackages(AppConstants.PACKAGE + ".job")
+		.setJobService(jobService);
+	}
+	
+	@Bean
 	protected CrudHandler crudHandler(
-		@Qualifier(AppConstants.Bean.ENTITY_TRX_MANAGER) EntityTrxManager entityTrxManager,
-		@Qualifier(AppConstants.Bean.DATA_MAPPER) DataMapper dataMapper,
+		EntityTrxManager entityTrxManager,
+		DataMapper dataMapper,
 		CrudResource resource,
 		CrudPermission permission
 	) {
@@ -215,7 +232,7 @@ class HandlerConfig {
 	// Ditambah dengan Permission untuk membatasi akses
 	@Bean
 	protected CrudResource crudResource(
-		@Qualifier(AppConstants.Bean.ENTITY_TRX_MANAGER) EntityTrxManager entityTrxManager
+		EntityTrxManager entityTrxManager
 	) {
 		return new CrudResource() {
 			@Override

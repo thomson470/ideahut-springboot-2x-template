@@ -184,6 +184,13 @@
 		</dependency>
 
 
+		<!-- QUARTZ -->
+		<dependency>
+		    <groupId>org.quartz-scheduler</groupId>
+		    <artifactId>quartz</artifactId>
+		</dependency>
+
+
 		<!-- MAIL -->
 		<dependency>
 		    <groupId>com.sun.mail</groupId>
@@ -268,7 +275,7 @@
 			<groupId>com.ibm.db2</groupId>
 		  	<artifactId>jcc</artifactId>
 		</dependency>
-
+		
 
 		<!-- H2 -->
 		<dependency>
