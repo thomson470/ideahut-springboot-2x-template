@@ -5274,7 +5274,7 @@
 								{
 									"key": "attachment",
 									"type": "file",
-									"src": "/opt/macdev/project/zamples/ideahut-springboot-3x/src/main/resources/report/tree1.png"
+									"src": "/opt/macdev/project/zamples/ideahut-springboot-2x/src/main/resources/report/tree1.png"
 								}
 							]
 						},
@@ -5333,7 +5333,7 @@
 								{
 									"key": "attachment",
 									"type": "file",
-									"src": "/opt/macdev/project/zamples/ideahut-springboot-3x/src/main/resources/report/tree2.png"
+									"src": "/opt/macdev/project/zamples/ideahut-springboot-2x/src/main/resources/report/tree2.png"
 								}
 							]
 						},

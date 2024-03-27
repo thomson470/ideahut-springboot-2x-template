@@ -235,6 +235,15 @@
             ]
         },
         {
+            "name": "isRunning",
+            "label": "isRunning",
+            "type": "option",
+            "option": "YES_NO",
+            "nullable": true,
+            "insertable": false,
+            "editable": true
+        },
+        {
             "name": "description",
             "label": "Description",
             "type": "text",
